@@ -14,8 +14,11 @@ import dataPacket.Serializer;
 public class BufferControlClient {
 	public ArrayList<byte[]> packetList = new ArrayList<byte[]>();
 	public final int packetSize = 10;
+	public int packetsToSend = 1;
 	final int windowFrameSize = 5;
 	int seq = 0;
+	public boolean[] packetsACKed;
+	
 	InetAddress IP;
 
 	public BufferControlClient() throws Exception {
@@ -41,6 +44,8 @@ public class BufferControlClient {
 		byte[] data = s.getBytes();
 		   //split sequence into byte blocks
 	       int packetSplits = data.length/packetSize;
+	       packetsToSend += packetSplits;
+	       packetsACKed = new boolean[packetsToSend];
 	       if(packetSplits>0){
 	    	   for (int i = 0; i < packetSplits+1; i++) {
 	    		   byte[] dataSeg = Arrays.copyOfRange(data, i*packetSize, i*packetSize+packetSize);
