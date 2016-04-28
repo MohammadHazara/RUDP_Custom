@@ -14,10 +14,11 @@ class ClientMain {
 
 	public static void main(String args[]) throws Exception {
 		boolean transmissionEnded = false;
-		BufferControlClient bufferControl = new BufferControlClient();
 		BufferedReader inFromUser = new BufferedReader(new InputStreamReader(System.in));
 		DatagramSocket clientSocket = new DatagramSocket();
 		InetAddress IPAddress = InetAddress.getByName("localhost");
+		
+		BufferControlClient bufferControl = new BufferControlClient(clientSocket);
 
 		byte[] sendData = new byte[bufferControl.packetSize];
 		byte[] receiveData = new byte[200];
@@ -30,7 +31,7 @@ class ClientMain {
 					&& bufferControl.seq < bufferControl.getBufferBase() + bufferControl.getWindowFrame()
 						&& bufferControl.seq >= bufferControl.getBufferBase()) {
 
-				bufferControl.sendDataOnSocket(clientSocket);
+				bufferControl.sendData();
 				
 			}
 
@@ -39,18 +40,19 @@ class ClientMain {
 			//receive ACK
 			clientSocket.receive(receivePacket);
 			DataPacket ACKPacket = (DataPacket) Serializer.toObject(receivePacket.getData());
-			bufferControl.setAcked((short) (ACKPacket.ack-bufferControl.getBufferBase()-1));
+			if(ACKPacket.ack!=3)
+			bufferControl.setAcked(ACKPacket.ack-bufferControl.getBufferBase()-1);//GOT -2 OOB???
 			System.out.println(bufferControl.getBufferBase());
 			
 			System.out.println("Received ACK for seq: " + ACKPacket.ack);	
 		
 			if (ACKPacket.ack-1 == bufferControl.getBufferBase()){
-				System.out.println("nus");
+				System.out.println("Received ACK for first index. Moving base.");
 				bufferControl.getBuffer().rotateArray();
 			}
 			
 			if (bufferControl.getBufferBase() == bufferControl.getBuffer().getPacketList().size())
-			transmissionEnded = true;
+				transmissionEnded = true;
 
 		}
 		clientSocket.close();

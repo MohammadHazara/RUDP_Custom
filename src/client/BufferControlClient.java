@@ -5,27 +5,33 @@ import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import dataPacket.DataPacket;
 import dataPacket.Serializer;
 
 public class BufferControlClient {
-	
+	DatagramSocket sock;
 	public final int packetSize = 10;
-	
-
 	int seq = 0;
-	
 	private Buffer buffer;
-	
 	InetAddress IP;
+	
+	//timer
+	private Timer timer;
+	private final long timeout = 10000;
+	private int timerIndex = 0;
+	private boolean timerIsScheduled;
 
-	public BufferControlClient() throws Exception {
+	public BufferControlClient(DatagramSocket sock) throws Exception {
 		IP = InetAddress.getByName("localhost");
 		buffer = new Buffer();
-		
+		timer = new Timer(true);
+		this.sock = sock;
 	}
 	
 	public int getWindowFrame(){
@@ -49,37 +55,20 @@ public class BufferControlClient {
 	
 	public void addData(String s){
 		byte[] data = s.getBytes();
-		   //split sequence into byte blocks
+		   //split sequence into byte blocks and create packets
 	       int packetSplits = data.length/packetSize;	   
-	       if(packetSplits>0){
 	    	   for (int i = 0; i < packetSplits+1; i++) {
 	    		   byte[] dataSeg = Arrays.copyOfRange(data, i*packetSize, i*packetSize+packetSize);
 	    		   DataPacket packet = new DataPacket(dataSeg, buffer.getPacketList().size()+1);
 	    		   addPacket(packet);
 	    		 
 	    	   }
-	    	   
-	       }
 		
-	}
-	
-	
-	
-	public void sendDataOnSocket(DatagramSocket sock){
-		DatagramPacket sendPacket = new DatagramPacket(buffer.getPacketList().get(seq), buffer.getPacketList().get(seq).length, IP, 9876);
-		try {
-			sock.send(sendPacket);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}finally{
-			  seq++;
-		}
-		//System.out.println("CHECKPOINT");
 	}
 	
 	private void addPacket(DataPacket packet){
 		try {
-			buffer.getPacketList().add(Serializer.toBytes(packet));
+			buffer.getPacketList().add(packet);
 		} catch (Exception e) {
 			System.out.println("Couldnt serialize object");
 			e.printStackTrace();
@@ -88,18 +77,88 @@ public class BufferControlClient {
 		
 	}
 	
-	//we are only sending atm
-	public void setACK(int ack){
-		//ACK = intToByteArray(ack);
-		//packet.setData(ACK, 4, ACK.length);
+	public void sendData(){
+		try {
+			DataPacket packetToSend = buffer.getPacketList().get(seq);
+			byte[] bytesToSend = Serializer.toBytes(packetToSend);
+			DatagramPacket sendPacket = new DatagramPacket(bytesToSend, bytesToSend.length, IP, 9876);
+			sock.send(sendPacket);
+			
+			//set packet sent timestamp
+			packetToSend.sentTimestamp = new Timestamp(System.currentTimeMillis()%1000);
+			
+			seq++;//shouldnt be in finally. is seq redundant here? is base enough, since seq is set on constructor
+		} catch (IOException e) {
+			e.printStackTrace();
+		}finally{
+			if(!timerIsScheduled)//start timer
+				timer.schedule(new RescheduleTask(), timeout);
+			 //seq++;
+		}
 	}
+	
+	private void resendPacketAtIndex(int i){
+		try {
+			DataPacket packetToSend = buffer.getPacketList().get(i);
+			byte[] bytesToSend = Serializer.toBytes(packetToSend);
+			DatagramPacket sendPacket = new DatagramPacket(bytesToSend, bytesToSend.length, IP, 9876);
+			sock.send(sendPacket);
+			
+			//reset packet sent timestamp
+			packetToSend.sentTimestamp = new Timestamp(System.currentTimeMillis()%1000);
+			
+			seq++;//shouldnt be in finally. is seq redundant here? is base enough, since seq is set on constructor
+		} catch (IOException e) {
+			e.printStackTrace();
+		}finally{
+			 //seq++;
+		}
+	}
+	
+	private class RescheduleTask extends TimerTask{
+		@Override
+		public void run() {
+			//find nearest timestamp not ACKed and calc time diff to last index that was timerfocus
+			Timestamp lastIndexStamp = buffer.getPacketList().get(timerIndex).sentTimestamp;
+			Timestamp nearestTimestamp = null;
+			for (int i = 0; i < getWindowFrame(); i++) {
+				if(!buffer.getAckedPackets()[i]){//if index has not been ACKed yet, we will consider
+					Timestamp t = buffer.getPacketList().get(i+getBufferBase()).sentTimestamp;
+					if(nearestTimestamp == null)
+						nearestTimestamp = t;
+					if(t.before(nearestTimestamp)){
+						nearestTimestamp = t;
+						timerIndex = i+getBufferBase();
+					}
+				}
+			}
+			System.out.println("inside timer");
+			if(nearestTimestamp != null){
+				//find time difference
+				long timeDiff = nearestTimestamp.getTime() - lastIndexStamp.getTime();
+				if(timeDiff>=timeout || timeDiff<0)
+					timeDiff = timeout;
+				
+				//resend packet at timerIndex
+				resendPacketAtIndex(timerIndex);
+				
+				//reschedule timer, dont reschedule if transmission is not ongoing (current transit has ended)
+				if(getBufferBase() < buffer.getPacketList().size())
+					timer.schedule(new RescheduleTask(), timeDiff);
+				else 
+					timerIsScheduled = false;
+				
+			}
+		}	
+	}
+	
+
 
 	public Buffer getBuffer() {
 		return buffer;
 	}
 	
-	
-	public void setAcked(short i){	
+	public void setAcked(int i){	
 		this.buffer.setAckedPacket(i);
 	}
 	
