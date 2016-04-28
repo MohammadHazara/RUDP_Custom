@@ -4,6 +4,8 @@ package server;
 import java.io.*;
 import java.net.*;
 
+import javax.xml.crypto.Data;
+
 import dataPacket.DataPacket;
 import dataPacket.Serializer;
 
@@ -33,11 +35,13 @@ class ServerMain
                    int port = receivePacket.getPort();
                    
                    
+                   //sendData = ack.getBytes();
+                   DataPacket ackPacket = new DataPacket(null, 0);
+                  
+                   ackPacket.ack = packet.seq;
+                   byte[] ackBytes = Serializer.toBytes(ackPacket);
                    
-                   String capitalizedSentence = sentence.toUpperCase();
-                   sendData = capitalizedSentence.getBytes();
-                   
-                   DatagramPacket ACK = new DatagramPacket(sendData, sendData.length, IPAddress, port);
+                   DatagramPacket ACK = new DatagramPacket(ackBytes, ackBytes.length, IPAddress, port);
                    serverSocket.send(ACK);
                 }
        }

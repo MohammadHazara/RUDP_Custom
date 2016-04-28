@@ -14,8 +14,8 @@ import dataPacket.Serializer;
 public class BufferControlClient {
 	
 	public final int packetSize = 10;
-	 final int windowFrameSize = 5;
-	 private boolean[] ackedPackets = new boolean[windowFrameSize];
+	
+
 	int seq = 0;
 	
 	private Buffer buffer;
@@ -26,6 +26,10 @@ public class BufferControlClient {
 		IP = InetAddress.getByName("localhost");
 		buffer = new Buffer();
 		
+	}
+	
+	public int getWindowFrame(){
+		return this.buffer.windowFrameSize;
 	}
 	
 	private byte[] intToByteArray(int value) {
@@ -52,6 +56,7 @@ public class BufferControlClient {
 	    		   byte[] dataSeg = Arrays.copyOfRange(data, i*packetSize, i*packetSize+packetSize);
 	    		   DataPacket packet = new DataPacket(dataSeg, buffer.getPacketList().size()+1);
 	    		   addPacket(packet);
+	    		 
 	    	   }
 	    	   
 	       }
@@ -67,9 +72,9 @@ public class BufferControlClient {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}finally{
-			seq++;
+			  seq++;
 		}
-		System.out.println("CHECKPOINT");
+		//System.out.println("CHECKPOINT");
 	}
 	
 	private void addPacket(DataPacket packet){
@@ -93,8 +98,13 @@ public class BufferControlClient {
 		return buffer;
 	}
 	
-	public void incerementBase(){
-		this.buffer.setBase(1);
+	
+	public void setAcked(short i){	
+		this.buffer.setAckedPacket(i);
+	}
+	
+	public int getBufferBase(){
+		return this.buffer.getBase();
 	}
 
 

@@ -8,7 +8,7 @@ public class DataPacket implements Serializable{
 	
 	public byte[] data;
 	public int seq;
-	public int ack;
+	public int ack = 0;
 
 	public DataPacket(byte[] data, int seq) {
 		this.data = data;
