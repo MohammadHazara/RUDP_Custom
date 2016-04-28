@@ -12,17 +12,20 @@ import dataPacket.DataPacket;
 import dataPacket.Serializer;
 
 public class BufferControlClient {
-	public ArrayList<byte[]> packetList = new ArrayList<byte[]>();
+	
 	public final int packetSize = 10;
-	public int packetsToSend = 1;
-	final int windowFrameSize = 5;
+	 final int windowFrameSize = 5;
+	 private boolean[] ackedPackets = new boolean[windowFrameSize];
 	int seq = 0;
-	public boolean[] packetsACKed;
+	
+	private Buffer buffer;
 	
 	InetAddress IP;
 
 	public BufferControlClient() throws Exception {
 		IP = InetAddress.getByName("localhost");
+		buffer = new Buffer();
+		
 	}
 	
 	private byte[] intToByteArray(int value) {
@@ -43,13 +46,11 @@ public class BufferControlClient {
 	public void addData(String s){
 		byte[] data = s.getBytes();
 		   //split sequence into byte blocks
-	       int packetSplits = data.length/packetSize;
-	       packetsToSend += packetSplits;
-	       packetsACKed = new boolean[packetsToSend];
+	       int packetSplits = data.length/packetSize;	   
 	       if(packetSplits>0){
 	    	   for (int i = 0; i < packetSplits+1; i++) {
 	    		   byte[] dataSeg = Arrays.copyOfRange(data, i*packetSize, i*packetSize+packetSize);
-	    		   DataPacket packet = new DataPacket(dataSeg, packetList.size()+1);
+	    		   DataPacket packet = new DataPacket(dataSeg, buffer.getPacketList().size()+1);
 	    		   addPacket(packet);
 	    	   }
 	    	   
@@ -60,7 +61,7 @@ public class BufferControlClient {
 	
 	
 	public void sendDataOnSocket(DatagramSocket sock){
-		DatagramPacket sendPacket = new DatagramPacket(packetList.get(seq), packetList.get(seq).length, IP, 9876);
+		DatagramPacket sendPacket = new DatagramPacket(buffer.getPacketList().get(seq), buffer.getPacketList().get(seq).length, IP, 9876);
 		try {
 			sock.send(sendPacket);
 		} catch (IOException e) {
@@ -73,7 +74,7 @@ public class BufferControlClient {
 	
 	private void addPacket(DataPacket packet){
 		try {
-			packetList.add(Serializer.toBytes(packet));
+			buffer.getPacketList().add(Serializer.toBytes(packet));
 		} catch (Exception e) {
 			System.out.println("Couldnt serialize object");
 			e.printStackTrace();
@@ -86,6 +87,14 @@ public class BufferControlClient {
 	public void setACK(int ack){
 		//ACK = intToByteArray(ack);
 		//packet.setData(ACK, 4, ACK.length);
+	}
+
+	public Buffer getBuffer() {
+		return buffer;
+	}
+	
+	public void incerementBase(){
+		this.buffer.setBase(1);
 	}
 
 
