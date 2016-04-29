@@ -23,7 +23,7 @@ public class BufferControlClient {
 	
 	//timer
 	private Timer timer;
-	private final long timeout = 10000;
+	private final long timeout = 3000;
 	private int timerIndex = 0;
 	private boolean timerIsScheduled;
 
