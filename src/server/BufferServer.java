@@ -27,10 +27,11 @@ public class BufferServer {
 	public void printData(){
 		if(lastPrintedSeq == 0 && packetList.get(lastPrintedSeq).seq != 0){//to avoid rechecking 1 element each loop
 			System.out.print(new String(packetList.get(0).data));
+			lastPrintedSeq++;
 		}
 			
 		while(packetList.get(lastPrintedSeq+1).seq != 0 && packetList.get(lastPrintedSeq).seq != 0){
-			System.out.println(packetList.get(lastPrintedSeq+1).seq);//System.out.print(new String(packetList.get(lastPrintedSeq+1).data));
+			System.out.print(new String(packetList.get(lastPrintedSeq).data));
 			lastPrintedSeq++;
 			
 			//if all packets have been printed, break out of while
