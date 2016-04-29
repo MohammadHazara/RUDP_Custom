@@ -28,7 +28,7 @@ public class BufferControlClient {
 	private boolean timerIsScheduled;
 
 	public BufferControlClient(DatagramSocket sock) throws Exception {
-		IP = InetAddress.getByName("10.16.235.46");
+		IP = InetAddress.getByName("localhost");
 		buffer = new Buffer();
 		timer = new Timer(true);
 		this.sock = sock;

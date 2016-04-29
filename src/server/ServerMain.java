@@ -6,12 +6,14 @@ import java.net.*;
 
 import javax.xml.crypto.Data;
 
+import client.Buffer;
 import dataPacket.DataPacket;
 import dataPacket.Serializer;
 
 class ServerMain
 {
     private static DatagramSocket serverSocket;
+    private static BufferServer buffer =new BufferServer();
 
 	public static void main(String args[]) throws Exception
        {
@@ -25,9 +27,11 @@ class ServerMain
                    serverSocket.receive(receivePacket);
                    
                    DataPacket packet = (DataPacket)Serializer.toObject(receivePacket.getData());
+                   buffer.addReceivedPacket(packet);
+                   buffer.printData();
                    
-                   String sentence = new String(new String(packet.data) + "; SEQ: "+ Integer.toString(packet.seq));
-                   System.out.println("RECEIVED: " + sentence);
+                   //String sentence = new String(new String(packet.data) + "; SEQ: "+ Integer.toString(packet.seq));
+                   //System.out.println("RECEIVED: " + sentence);
                    
                    
                    //send ACK
