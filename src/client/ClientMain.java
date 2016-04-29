@@ -11,6 +11,7 @@ import dataPacket.DataPacket;
 import dataPacket.Serializer;
 
 class ClientMain {
+	private static boolean blockACK = true;
 
 	public static void main(String args[]) throws Exception {
 		boolean transmissionEnded = false;
@@ -25,6 +26,7 @@ class ClientMain {
 		String sentence = inFromUser.readLine();
 
 		bufferControl.addData(sentence);
+		
 		while (!transmissionEnded) {
 			// Loop runs until all packets sent
 			while (bufferControl.seq < bufferControl.getBuffer().getPacketList().size()
@@ -32,7 +34,6 @@ class ClientMain {
 						&& bufferControl.seq >= bufferControl.getBufferBase()) {
 
 				bufferControl.sendData();
-				
 			}
 
 			DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
@@ -40,11 +41,17 @@ class ClientMain {
 			//receive ACK
 			clientSocket.receive(receivePacket);
 			DataPacket ACKPacket = (DataPacket) Serializer.toObject(receivePacket.getData());
-			if(ACKPacket.ack!=3)
-			bufferControl.setAcked(ACKPacket.ack-bufferControl.getBufferBase()-1);//GOT -2 OOB???
-			System.out.println(bufferControl.getBufferBase());
+			if(ACKPacket.ack==3 && blockACK){
+			//bufferControl.setAcked(ACKPacket.ack-bufferControl.getBufferBase()-1);
+			//System.out.println("Received ACK for seq: " + ACKPacket.ack);
+				blockACK = false;
+			}else{
+				bufferControl.setAcked(ACKPacket.ack-bufferControl.getBufferBase()-1);
+				System.out.println("Received ACK for seq: " + ACKPacket.ack);
+			}
+			System.out.println("base" + bufferControl.getBufferBase());
 			
-			System.out.println("Received ACK for seq: " + ACKPacket.ack);	
+				
 		
 			if (ACKPacket.ack-1 == bufferControl.getBufferBase()){
 				System.out.println("Received ACK for first index. Moving base.");

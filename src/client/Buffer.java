@@ -19,7 +19,7 @@ public class Buffer {
 		// check number of consecutive received ACKs
 		for (int i = 0; i < windowFrameSize; i++) {
 			if (ackedPackets[i]) {
-				System.out.println("Packet " +i+ " is " + ackedPackets[i]);
+				//System.out.println("Packet " +i+ " is " + ackedPackets[i]);
 				shifts++;
 			} else {
 				break;

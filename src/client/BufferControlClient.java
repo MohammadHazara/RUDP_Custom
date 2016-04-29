@@ -92,12 +92,15 @@ public class BufferControlClient {
 			e.printStackTrace();
 		}finally{
 			if(!timerIsScheduled)//start timer
-				timer.schedule(new RescheduleTask(), timeout);
+				{timer.schedule(new RescheduleTask(), timeout);
+				timerIsScheduled = true;
+				System.out.println("start timer");}
 			 //seq++;
 		}
 	}
 	
 	private void resendPacketAtIndex(int i){
+		System.out.println("resending packet at index: "+i);
 		try {
 			DataPacket packetToSend = buffer.getPacketList().get(i);
 			byte[] bytesToSend = Serializer.toBytes(packetToSend);
@@ -107,7 +110,7 @@ public class BufferControlClient {
 			//reset packet sent timestamp
 			packetToSend.sentTimestamp = new Timestamp(System.currentTimeMillis()%1000);
 			
-			seq++;//shouldnt be in finally. is seq redundant here? is base enough, since seq is set on constructor
+			//seq++;//shouldnt be in finally. is seq redundant here? is base enough, since seq is set on constructor
 		} catch (IOException e) {
 			e.printStackTrace();
 		}finally{
@@ -118,33 +121,33 @@ public class BufferControlClient {
 	private class RescheduleTask extends TimerTask{
 		@Override
 		public void run() {
-			//find nearest timestamp not ACKed and calc time diff to last index that was timerfocus
+			//find oldest timestamp not ACKed and calc time diff to last index that was timerfocus
 			Timestamp lastIndexStamp = buffer.getPacketList().get(timerIndex).sentTimestamp;
-			Timestamp nearestTimestamp = null;
+			Timestamp oldestTimestamp = null;
 			for (int i = 0; i < getWindowFrame(); i++) {
 				if(!buffer.getAckedPackets()[i]){//if index has not been ACKed yet, we will consider
 					Timestamp t = buffer.getPacketList().get(i+getBufferBase()).sentTimestamp;
-					if(nearestTimestamp == null)
-						nearestTimestamp = t;
-					if(t.before(nearestTimestamp)){
-						nearestTimestamp = t;
+					if(oldestTimestamp == null || t.before(oldestTimestamp)){
+						oldestTimestamp = t;
+						
 						timerIndex = i+getBufferBase();
+						System.out.println("timerindex="+timerIndex);
 					}
 				}
 			}
 			System.out.println("inside timer");
-			if(nearestTimestamp != null){
+			if(oldestTimestamp != null){
 				//find time difference
-				long timeDiff = nearestTimestamp.getTime() - lastIndexStamp.getTime();
-				if(timeDiff>=timeout || timeDiff<0)
+				long timeDiff =  lastIndexStamp.getTime() - oldestTimestamp.getTime();
+				if(timeDiff>=timeout || timeDiff<=0)
 					timeDiff = timeout;
 				
 				//resend packet at timerIndex
 				resendPacketAtIndex(timerIndex);
-				
 				//reschedule timer, dont reschedule if transmission is not ongoing (current transit has ended)
-				if(getBufferBase() < buffer.getPacketList().size())
+				if(getBufferBase() < buffer.getPacketList().size()){
 					timer.schedule(new RescheduleTask(), timeDiff);
+					System.out.println("reschedule timer with time: " +timeDiff);}
 				else 
 					timerIsScheduled = false;
 				
