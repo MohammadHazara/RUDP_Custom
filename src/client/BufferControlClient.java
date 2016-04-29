@@ -28,7 +28,7 @@ public class BufferControlClient {
 	private boolean timerIsScheduled;
 
 	public BufferControlClient(DatagramSocket sock) throws Exception {
-		IP = InetAddress.getByName("localhost");
+		IP = InetAddress.getByName("10.16.235.46");
 		buffer = new Buffer();
 		timer = new Timer(true);
 		this.sock = sock;
@@ -82,6 +82,7 @@ public class BufferControlClient {
 			DataPacket packetToSend = buffer.getPacketList().get(seq);
 			byte[] bytesToSend = Serializer.toBytes(packetToSend);
 			DatagramPacket sendPacket = new DatagramPacket(bytesToSend, bytesToSend.length, IP, 9876);
+			System.out.println("Sending packet with seq: "+ packetToSend.seq);
 			sock.send(sendPacket);
 			
 			//set packet sent timestamp
@@ -125,7 +126,7 @@ public class BufferControlClient {
 			Timestamp lastIndexStamp = buffer.getPacketList().get(timerIndex).sentTimestamp;
 			Timestamp oldestTimestamp = null;
 			for (int i = 0; i < getWindowFrame(); i++) {
-				if(!buffer.getAckedPackets()[i]){//if index has not been ACKed yet, we will consider
+				if(!buffer.getAckedPackets()[i] && i<buffer.getPacketList().size()){//if index has not been ACKed yet, we will consider
 					Timestamp t = buffer.getPacketList().get(i+getBufferBase()).sentTimestamp;
 					if(oldestTimestamp == null || t.before(oldestTimestamp)){
 						oldestTimestamp = t;

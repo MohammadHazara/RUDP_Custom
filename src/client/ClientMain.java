@@ -17,7 +17,7 @@ class ClientMain {
 		boolean transmissionEnded = false;
 		BufferedReader inFromUser = new BufferedReader(new InputStreamReader(System.in));
 		DatagramSocket clientSocket = new DatagramSocket();
-		InetAddress IPAddress = InetAddress.getByName("localhost");
+		//InetAddress IPAddress = InetAddress.getByName("10.16.235.46");
 		
 		BufferControlClient bufferControl = new BufferControlClient(clientSocket);
 
@@ -49,7 +49,7 @@ class ClientMain {
 				bufferControl.setAcked(ACKPacket.ack-bufferControl.getBufferBase()-1);
 				System.out.println("Received ACK for seq: " + ACKPacket.ack);
 			}
-			System.out.println("base" + bufferControl.getBufferBase());
+			System.out.println("base=" + bufferControl.getBufferBase());
 			
 				
 		
