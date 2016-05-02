@@ -4,8 +4,6 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.util.Arrays;
 
 import dataPacket.DataPacket;
 import dataPacket.Serializer;
@@ -21,7 +19,7 @@ class ClientMain {
 		
 		BufferControlClient bufferControl = new BufferControlClient(clientSocket);
 
-		byte[] sendData = new byte[bufferControl.packetSize];
+		//byte[] sendData = new byte[bufferControl.packetSize];
 		byte[] receiveData = new byte[200];
 		String sentence = inFromUser.readLine();
 
@@ -42,14 +40,13 @@ class ClientMain {
 			clientSocket.receive(receivePacket);
 			DataPacket ACKPacket = (DataPacket) Serializer.toObject(receivePacket.getData());
 			if(ACKPacket.ack==3 && blockACK){
-			//bufferControl.setAcked(ACKPacket.ack-bufferControl.getBufferBase()-1);
-			//System.out.println("Received ACK for seq: " + ACKPacket.ack);
+			//BLOCK ACK ON SEQ3 ONE TIME - TESTING PURPOSE ONLY
 				blockACK = false;
 			}else{
 				bufferControl.setAcked(ACKPacket.ack-bufferControl.getBufferBase()-1);
 				System.out.println("Received ACK for seq: " + ACKPacket.ack);
 			}
-			System.out.println("base=" + bufferControl.getBufferBase());
+			//System.out.println("base=" + bufferControl.getBufferBase());
 			
 				
 		
@@ -64,4 +61,7 @@ class ClientMain {
 		}
 		clientSocket.close();
 	}
+
+	
+	
 }

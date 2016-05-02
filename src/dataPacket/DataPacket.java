@@ -5,7 +5,6 @@ import java.sql.Timestamp;
 
 public class DataPacket implements Serializable{
 	private static final long serialVersionUID = 1;
-    //private static final int CURRENT_SERIAL_VERSION = 1;
 	
 	public byte[] data;
 	public int seq;

@@ -1,12 +1,9 @@
 package client;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.sql.Timestamp;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -16,19 +13,19 @@ import dataPacket.Serializer;
 
 public class BufferControlClient {
 	DatagramSocket sock;
-	public final int packetSize = 10;
+	public final int dataSize = 10;
 	int seq = 0;
 	private Buffer buffer;
 	InetAddress IP;
 	
 	//timer
 	private Timer timer;
-	private final long timeout = 3000;
+	private final long timeout = 1000;
 	private int timerIndex = 0;
 	private boolean timerIsScheduled;
 
 	public BufferControlClient(DatagramSocket sock) throws Exception {
-		IP = InetAddress.getByName("10.16.235.46");
+		IP = InetAddress.getByName("10.16.163.221");//test IP on LAN
 		buffer = new Buffer();
 		timer = new Timer(true);
 		this.sock = sock;
@@ -56,9 +53,10 @@ public class BufferControlClient {
 	public void addData(String s){
 		byte[] data = s.getBytes();
 		   //split sequence into byte blocks and create packets
-	       int packetSplits = data.length/packetSize;	   
+	       int packetSplits = data.length/dataSize;	 
+	       if((data.length%dataSize)==0)--packetSplits;
 	    	   for (int i = 0; i < packetSplits+1; i++) {
-	    		   byte[] dataSeg = Arrays.copyOfRange(data, i*packetSize, i*packetSize+packetSize);
+	    		   byte[] dataSeg = Arrays.copyOfRange(data, i*dataSize, i*dataSize+dataSize);
 	    		   DataPacket packet = new DataPacket(dataSeg, buffer.getPacketList().size()+1);
 	    		   addPacket(packet);
 	    		 
@@ -82,13 +80,15 @@ public class BufferControlClient {
 			DataPacket packetToSend = buffer.getPacketList().get(seq);
 			byte[] bytesToSend = Serializer.toBytes(packetToSend);
 			DatagramPacket sendPacket = new DatagramPacket(bytesToSend, bytesToSend.length, IP, 9876);
+			
 			System.out.println("Sending packet with seq: "+ packetToSend.seq);
+			//System.out.println("packet length:" +sendPacket.getLength());
 			sock.send(sendPacket);
 			
 			//set packet sent timestamp
 			packetToSend.sentTimestamp = new Timestamp(System.currentTimeMillis()%1000);
 			
-			seq++;//shouldnt be in finally. is seq redundant here? is base enough, since seq is set on constructor
+			seq++;
 		} catch (IOException e) {
 			e.printStackTrace();
 		}finally{
@@ -96,7 +96,6 @@ public class BufferControlClient {
 				{timer.schedule(new RescheduleTask(), timeout);
 				timerIsScheduled = true;
 				System.out.println("start timer");}
-			 //seq++;
 		}
 	}
 	
@@ -111,11 +110,8 @@ public class BufferControlClient {
 			//reset packet sent timestamp
 			packetToSend.sentTimestamp = new Timestamp(System.currentTimeMillis()%1000);
 			
-			//seq++;//shouldnt be in finally. is seq redundant here? is base enough, since seq is set on constructor
 		} catch (IOException e) {
 			e.printStackTrace();
-		}finally{
-			 //seq++;
 		}
 	}
 	
@@ -126,13 +122,13 @@ public class BufferControlClient {
 			Timestamp lastIndexStamp = buffer.getPacketList().get(timerIndex).sentTimestamp;
 			Timestamp oldestTimestamp = null;
 			for (int i = 0; i < getWindowFrame(); i++) {
-				if(!buffer.getAckedPackets()[i] && i<buffer.getPacketList().size()){//if index has not been ACKed yet, we will consider
+				if(!buffer.getAckedPackets()[i] && i+getBufferBase()<buffer.getPacketList().size()){//if index has not been ACKed yet, we will consider
 					Timestamp t = buffer.getPacketList().get(i+getBufferBase()).sentTimestamp;
 					if(oldestTimestamp == null || t.before(oldestTimestamp)){
 						oldestTimestamp = t;
 						
 						timerIndex = i+getBufferBase();
-						System.out.println("timerindex="+timerIndex);
+						//System.out.println("timerindex="+timerIndex);
 					}
 				}
 			}

@@ -2,16 +2,13 @@ package server;
 
 import java.util.ArrayList;
 
-import javax.print.event.PrintJobAttributeListener;
-
 import dataPacket.DataPacket;
 
 public class BufferServer {
-	private int base = 0;
 	private ArrayList<DataPacket> packetList = new ArrayList<DataPacket>();
 	final int windowFrameSize = 5;
-	int lastPrintedSeq = 0;
-	private boolean didPrintFirst;//hax that works
+	int lastPrintedSeq = 0;//buffer base
+	private boolean didPrintFirst;
 	
 	public void addReceivedPacket(DataPacket packet){
 		int amountToExpand = packet.seq-packetList.size()+1;

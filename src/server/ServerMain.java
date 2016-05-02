@@ -1,12 +1,10 @@
 
 package server;
 
-import java.io.*;
-import java.net.*;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 
-import javax.xml.crypto.Data;
-
-import client.Buffer;
 import dataPacket.DataPacket;
 import dataPacket.Serializer;
 
@@ -19,7 +17,7 @@ class ServerMain
        {
           serverSocket = new DatagramSocket(9876);
              byte[] receiveData = new byte[200];
-             byte[] sendData = new byte[200];
+             //byte[] sendData = new byte[packetSize];
              while(true)
                 {
                    DatagramPacket receivePacket = 
