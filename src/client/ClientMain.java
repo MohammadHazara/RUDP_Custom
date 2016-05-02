@@ -15,7 +15,6 @@ class ClientMain {
 		boolean transmissionEnded = false;
 		BufferedReader inFromUser = new BufferedReader(new InputStreamReader(System.in));
 		DatagramSocket clientSocket = new DatagramSocket();
-		//InetAddress IPAddress = InetAddress.getByName("10.16.235.46");
 		
 		BufferControlClient bufferControl = new BufferControlClient(clientSocket);
 

@@ -25,7 +25,7 @@ public class BufferControlClient {
 	private boolean timerIsScheduled;
 
 	public BufferControlClient(DatagramSocket sock) throws Exception {
-		IP = InetAddress.getByName("10.16.163.221");//test IP on LAN
+		IP = InetAddress.getByName("localhost");//test IP 10.16.163.221 on LAN
 		buffer = new Buffer();
 		timer = new Timer(true);
 		this.sock = sock;
@@ -35,20 +35,6 @@ public class BufferControlClient {
 		return this.buffer.windowFrameSize;
 	}
 	
-	private byte[] intToByteArray(int value) {
-		String s = Integer.toString(value);
-		System.out.println(s.getBytes().length);
-		return s.getBytes();
-		
-
-//		byte[] result = new byte[4];
-//		result[0] = (byte) ((data & 0xFF000000) >> 24);
-//		result[1] = (byte) ((data & 0x00FF0000) >> 16);
-//		result[2] = (byte) ((data & 0x0000FF00) >> 8);
-//		result[3] = (byte) ((data & 0x000000FF) >> 0);
-//		
-//		return result;
-	}
 	
 	public void addData(String s){
 		byte[] data = s.getBytes();
