@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.util.Arrays;
 
 import dataPacket.DataPacket;
 import dataPacket.Serializer;
@@ -12,18 +14,20 @@ class ClientMain {
 	private static boolean blockACK = true;
 
 	public static void main(String args[]) throws Exception {
-		boolean transmissionEnded = false;
+		//boolean transmissionEnded = false;
 		BufferedReader inFromUser = new BufferedReader(new InputStreamReader(System.in));
 		DatagramSocket clientSocket = new DatagramSocket();
+		////InetAddress IPAddress = InetAddress.getByName("10.16.235.46");
 		
 		BufferControlClient bufferControl = new BufferControlClient(clientSocket);
 
-		//byte[] sendData = new byte[bufferControl.packetSize];
-		byte[] receiveData = new byte[200];
+		////byte[] sendData = new byte[bufferControl.packetSize];
+		//byte[] receiveData = new byte[200];
 		String sentence = inFromUser.readLine();
 
 		bufferControl.addData(sentence);
-		
+		bufferControl.send();
+		/*
 		while (!transmissionEnded) {
 			// Loop runs until all packets sent
 			while (bufferControl.seq < bufferControl.getBuffer().getPacketList().size()
@@ -45,7 +49,7 @@ class ClientMain {
 				bufferControl.setAcked(ACKPacket.ack-bufferControl.getBufferBase()-1);
 				System.out.println("Received ACK for seq: " + ACKPacket.ack);
 			}
-			//System.out.println("base=" + bufferControl.getBufferBase());
+			System.out.println("base=" + bufferControl.getBufferBase());
 			
 				
 		
@@ -57,10 +61,7 @@ class ClientMain {
 			if (bufferControl.getBufferBase() == bufferControl.getBuffer().getPacketList().size())
 				transmissionEnded = true;
 
-		}
-		clientSocket.close();
+		}*/
+		clientSocket.close();//-> buffercontrol.close MAKE
 	}
-
-	
-	
 }

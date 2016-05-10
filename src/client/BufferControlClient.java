@@ -61,6 +61,46 @@ public class BufferControlClient {
 		
 	}
 	
+	public void send() throws Exception{
+		boolean transmissionEnded = false;
+		boolean blockACK = true;
+		
+		while (!transmissionEnded) {
+			// Loop runs until all packets sent
+			while (seq < getBuffer().getPacketList().size()
+					&& seq < getBufferBase() + getWindowFrame()
+						&& seq >= getBufferBase()) {
+
+				sendData();
+			}
+			byte[] receiveData = new byte[200];
+			DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+			
+			//receive ACK
+			sock.receive(receivePacket);
+			DataPacket ACKPacket = (DataPacket) Serializer.toObject(receivePacket.getData());
+			if(ACKPacket.ack==3 && blockACK){
+			//BLOCK ACK ON SEQ3 ONE TIME - TESTING PURPOSE ONLY
+				blockACK = false;
+			}else{
+				setAcked(ACKPacket.ack-getBufferBase()-1);
+				System.out.println("Received ACK for seq: " + ACKPacket.ack);
+			}
+			System.out.println("base=" + getBufferBase());
+			
+				
+		
+			if (ACKPacket.ack-1 == getBufferBase()){
+				System.out.println("Received ACK for first index. Moving base.");
+				getBuffer().rotateArray();
+			}
+			
+			if (getBufferBase() == getBuffer().getPacketList().size())
+				transmissionEnded = true;
+
+		}
+	}
+	
 	public void sendData(){
 		try {
 			DataPacket packetToSend = buffer.getPacketList().get(seq);
